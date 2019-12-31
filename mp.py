@@ -23,21 +23,38 @@ nvir = nmo-nocc
 mo_coeff=pt.mo_coeff
 mo_energy=pt.mo_energy
 eris=pt.ao2mo(mo_coeff)
-"""pyscfもともとのやつ
+#eris[i*a][j*b]=<ij|ab> ((nocc,nocc)と(nvir,nvir)の直積)
+#pyscfもともとのやつ
 eia = pt.mo_energy[:nocc,None] - pt.mo_energy[None,nocc:]
+#eia[i][a]=mo_ene[i]-mo_ene[a]
 emp2=0
 for i in range(nocc):
     gi = eris.ovov[i*nvir:(i+1)*nvir]
+    #gi=(a,j*b)=(nvir,nocc*nvir) 
 
     gi = gi.reshape(nvir,nocc,nvir).transpose(1,0,2)
+    #gi[j][a][b]=<ij|ab>
+    #reshapeで(nvir,nocc*nvir)=>(nvir,nocc,nvir)
+    #transpose(1,0,2)で(nvir,nocc,nvir)=>(nocc,nvir,nvir) (0次元目と1次元目を入れ替え)
 
     t2i = gi.conj()/lib.direct_sum('jb+a->jba', eia, eia[i])
-
+    #gi.conj()で複素共役
+    #direct_sum('jb+a->jba',eia,eia[i])[j][b][a]=eia[j][b]+eia[i][a]
+    #=(mo_ene[j]-mo_ene[b])+(mo_ene[i]-mo_ene[a])
+    #=ene[i]+ene[j]-ene[a]-ene[b]
+    #t2i[j][a][b]=<ij|ab>*/(ei+ej-ea-eb)
+    #=<ab|ij>/(ei+ej-ea-eb)
 
     emp2 += np.einsum('jab,jab',t2i,gi) *2
-    emp2 -= np.einsum('jab,jba',t2i,gi) 
+    #einsum('jab,jab',t2i,gi)
+    #=sum(j<nocc,a<nvir,b<nvir){(<ab|ij><ij|ab>)/(ei+ej-ea-eb)}
+    #=sum(j,a,b){|<ab|ij>|^2/(ei+ej-ea-eb)}
+    emp2 -= np.einsum('jab,jba',t2i,gi)
+    #einsum('jab,jba',t2i,gi)
+    #=sum(j,a,b){<ab|ij><ij|ba>/ei+ej-ea-eb}
 print(emp2)
-"""
+
+
 #以下、愚直にijabの足し合わせ
 emp2=0
 for i in range(nocc):
