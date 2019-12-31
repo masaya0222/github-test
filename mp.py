@@ -5,11 +5,15 @@ from pyscf.mp.mp2 import *
 import numpy as np
 from pyscf import lib
 mol = gto.Mole()
+"""
 mol.atom = [
     [8 , (0. , 0.    , 0.)],
     [1 , (0. , -0.757, 0.587)],
     [1 , (0. , 0.757 , 0.587)]]
-
+"""
+mol.atom = [
+    [7, (-0.5,0.,0.)],
+    [7, (+0.5,0.,0.)]]
 mol.basis = 'cc-pvdz'
 mol.build()
 mf = scf.RHF(mol).run()
